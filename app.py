@@ -22,7 +22,6 @@ def load_data():
 
 df = load_data()
 
-# RFM hesapla
 @st.cache_data
 def compute_rfm(df):
     df_rfm = df.dropna(subset=['Customer ID']).copy()
@@ -41,70 +40,70 @@ def compute_rfm(df):
         if r >= 4 and f >= 4 and m >= 4:
             return 'VIP'
         elif r >= 4 and f >= 3:
-            return 'Sadık Müşteri'
+            return 'Loyal'
         elif r >= 4 and f <= 2:
-            return 'Yeni Müşteri'
+            return 'New Customer'
         elif r == 3:
-            return 'Potansiyel'
+            return 'Potential'
         elif r <= 2 and f >= 3:
-            return 'Kaybedilmek Üzere'
+            return 'At Risk'
         else:
-            return 'Kayıp'
+            return 'Churned'
 
     rfm['Segment'] = rfm.apply(segment_customer, axis=1)
     return rfm
 
 rfm = compute_rfm(df)
 
-# Başlık
+# Header
 st.title("🛒 E-Commerce Sales Dashboard")
-st.markdown("**Online Retail II** dataset analizi — 2009-2011")
+st.markdown("**Online Retail II** dataset analysis — 2009-2011")
 st.divider()
 
-# KPI Kartları
+# KPI Cards
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("💰 Toplam Gelir", f"£{df['TotalPrice'].sum():,.0f}")
-col2.metric("📦 Toplam Sipariş", f"{df['Invoice'].nunique():,}")
-col3.metric("👥 Müşteri Sayısı", f"{df['Customer ID'].nunique():,}")
-col4.metric("🧾 Ort. Sipariş Değeri", f"£{df.groupby('Invoice')['TotalPrice'].sum().mean():,.0f}")
+col1.metric("💰 Total Revenue", f"£{df['TotalPrice'].sum():,.0f}")
+col2.metric("📦 Total Orders", f"{df['Invoice'].nunique():,}")
+col3.metric("👥 Unique Customers", f"{df['Customer ID'].nunique():,}")
+col4.metric("🧾 Avg. Order Value", f"£{df.groupby('Invoice')['TotalPrice'].sum().mean():,.0f}")
 
 st.divider()
 
-# Aylık Gelir Trendi
-st.subheader("📈 Aylık Gelir Trendi")
+# Monthly Revenue Trend
+st.subheader("📈 Monthly Revenue Trend")
 df['YearMonth'] = df['InvoiceDate'].dt.to_period('M').astype(str)
 monthly = df.groupby('YearMonth')['TotalPrice'].sum().reset_index()
 fig1 = px.line(monthly, x='YearMonth', y='TotalPrice',
-               labels={'YearMonth': 'Ay', 'TotalPrice': 'Gelir (£)'}, markers=True)
+               labels={'YearMonth': 'Month', 'TotalPrice': 'Revenue (£)'}, markers=True)
 st.plotly_chart(fig1, use_container_width=True)
 
 st.divider()
 
-# Ülke ve Ürün yan yana
+# Country and Product side by side
 col_left, col_right = st.columns(2)
 
 with col_left:
-    st.subheader("🌍 Top 10 Ülke (UK Hariç)")
+    st.subheader("🌍 Top 10 Countries (Excl. UK)")
     country_rev = df[df['Country'] != 'United Kingdom'].groupby('Country')['TotalPrice'].sum().sort_values(ascending=False).head(10)
     fig2 = px.bar(x=country_rev.values, y=country_rev.index, orientation='h',
-                  labels={'x': 'Gelir (£)', 'y': 'Ülke'},
+                  labels={'x': 'Revenue (£)', 'y': 'Country'},
                   color=country_rev.values, color_continuous_scale='Blues')
     fig2.update_layout(yaxis={'categoryorder': 'total ascending'}, showlegend=False)
     st.plotly_chart(fig2, use_container_width=True)
 
 with col_right:
-    st.subheader("🏆 En Çok Gelir Getiren Ürünler")
+    st.subheader("🏆 Top Products by Revenue")
     top_prod = df.groupby('Description')['TotalPrice'].sum().sort_values(ascending=False).head(10)
     fig3 = px.bar(x=top_prod.values, y=top_prod.index, orientation='h',
-                  labels={'x': 'Gelir (£)', 'y': 'Ürün'},
+                  labels={'x': 'Revenue (£)', 'y': 'Product'},
                   color=top_prod.values, color_continuous_scale='Greens')
     fig3.update_layout(yaxis={'categoryorder': 'total ascending'}, showlegend=False)
     st.plotly_chart(fig3, use_container_width=True)
 
 st.divider()
 
-# RFM
-st.subheader("👤 Müşteri Segmentleri (RFM)")
+# RFM Segmentation
+st.subheader("👤 Customer Segments (RFM Analysis)")
 col_pie, col_table = st.columns(2)
 
 with col_pie:
@@ -116,8 +115,8 @@ with col_pie:
 
 with col_table:
     seg_summary = rfm.groupby('Segment').agg(
-        Müşteri_Sayısı=('Customer ID', 'count'),
-        Ort_Harcama=('Monetary', 'mean'),
-        Ort_Sipariş=('Frequency', 'mean')
-    ).round(1).sort_values('Müşteri_Sayısı', ascending=False)
+        Customer_Count=('Customer ID', 'count'),
+        Avg_Spend=('Monetary', 'mean'),
+        Avg_Orders=('Frequency', 'mean')
+    ).round(1).sort_values('Customer_Count', ascending=False)
     st.dataframe(seg_summary, use_container_width=True)
