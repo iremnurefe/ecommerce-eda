@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import subprocess
+subprocess.run(["pip", "install", "plotly"], check=True)
 import plotly.express as px
 import warnings
 warnings.filterwarnings('ignore')
